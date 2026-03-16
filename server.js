@@ -26,20 +26,20 @@ async function startServer() {
         const token = req.headers.authorization || '';
         return { token };
       }
-    });
+    })
 
     await server.start();
-    server.applyMiddleware({ app });
+    server.applyMiddleware({ app })
 
-    const PORT = process.env.PORT || 5000;
+    const PORT = process.env.PORT || 5000
 
     app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}${server.graphqlPath}`);
+      console.log(`Server running on http://localhost:${PORT}${server.graphqlPath}`)
     });
 
   } catch (error) {
-    console.error(error);
+    console.error(error)
   }
 }
 
-startServer();
+startServer()
