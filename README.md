@@ -1,93 +1,161 @@
-# GraphQl
+# Systembolaget GraphQL API
+
+A GraphQL API serving the Systembolaget (Swedish alcohol retail monopoly) product catalogue. Supports full CRUD on products, read-only access to countries and product groups, JWT authentication, and automated testing via Postman/Newman in a CI/CD pipeline.
+
+## Implementation Type
+
+GraphQL
+
+## Links and Testing
 
 
 
-## Getting started
+Run tests manually (no setup needed):
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-* [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.lnu.se/1dv027/student/ls224ec/exercises/graphql.git
-git branch -M main
-git push -uf origin main
+```bash
+npx newman run SystembolagetAPI.postman_collection.json -e production.postman_environment.json
 ```
 
-## Integrate with your tools
+## Dataset
 
-* [Set up project integrations](https://gitlab.lnu.se/1dv027/student/ls224ec/exercises/graphql/-/settings/integrations)
+| Field | Description |
+|---|---|
+| Dataset source | Systembolaget open data (XLSX export, January 2020) |
+| Total records | 18,572 products |
+| Primary resource (CRUD) | **Product** — id, name, price, volumeMl, alcoholContent, productGroup, type, style, packaging, origin, originCountry, producer, vintage, organic, kosher |
+| Secondary resource 1 (read-only) | **Country** — name, productCount, products |
+| Secondary resource 2 (read-only) | **ProductGroup** — name, productCount, products |
 
-## Collaborate with your team
+## Design Decisions
 
-* [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+### Authentication
 
-## Test and Deploy
+JWT tokens are issued on `register` and `login` mutations and must be passed as `Authorization: Bearer <token>` in the request header. The token is verified in the Apollo Server `context` function on every request and made available to resolvers. Write operations (`addProduct`, `updateProduct`, `deleteProduct`) call `requireAuth()` which throws an `AuthenticationError` if no valid token is present.
 
-Use the built-in continuous integration in GitLab.
+**Why JWT:** Stateless — no session storage needed, works well with CI/CD test pipelines since tokens can be generated and passed between requests via environment variables. The alternative would be session-based auth, which requires sticky sessions or a shared session store and adds infrastructure complexity for no benefit in an API context.
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+### API Design
 
-***
+**Schema structure:** Three main types — `Product`, `Country`, `ProductGroup` — plus `User` and `AuthPayload` for auth. Queries and mutations are all served through the single `/graphql` endpoint.
 
-# Editing this README
+**Nested queries:** `Country` and `ProductGroup` both expose a `products` field, allowing the client to fetch a country or product group and its associated products in a single request. This is one of the main advantages of GraphQL over REST — no need for a separate `/countries/:name/products` endpoint.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+**Single endpoint:** All operations go to `POST /graphql`. The operation type (query vs mutation) and shape of the response are determined entirely by the request body. This simplifies routing and makes the API self-documenting via the schema.
 
-## Suggestions for a good README
+**Filtering and pagination:** The `products` query accepts `page`, `limit`, `search`, `productGroup`, and `country` arguments. Full-text search is handled via a MongoDB text index on `name`, `name2`, and `producer`.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+### Error Handling
 
-## Name
-Choose a self-explaining name for your project.
+All errors are returned in the standard GraphQL `errors` array with a `message` field. Apollo Server maps error types as follows:
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+- `UserInputError` — validation failures (missing fields, duplicate email, product not found)
+- `AuthenticationError` — missing or invalid JWT token
+- Unexpected errors — caught by Apollo and returned as `INTERNAL_SERVER_ERROR`
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+This means clients always receive a `200` HTTP status with either a `data` field (success) or an `errors` field (failure), which is standard GraphQL behaviour.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Core Technologies
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+| Technology | Reason |
+|---|---|
+| Node.js + Express | Familiar, lightweight, good ecosystem |
+| Apollo Server v3 | Industry standard GraphQL server, built-in playground |
+| Mongoose | Schema validation and MongoDB ODM |
+| MongoDB | Flexible document store, good fit for product catalogue data |
+| JWT + bcrypt | Stateless auth, bcrypt for secure password hashing |
+| Newman | CLI runner for Postman collections, integrates with GitLab CI |
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+## Getting Started
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### Prerequisites
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+- Node.js 18+
+- MongoDB (local or Atlas)
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+### Installation
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+```bash
+git clone <repo-url>
+cd systembolaget-graphql-api
+npm install
+cp .env.example .env
+# fill in MONGO_URI and JWT_SECRET in .env
+```
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+### Seed the database
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+Place `Products-2020-jan-07-v1.xlsx` in the project root, then:
 
-## License
-For open source projects, say how it is licensed.
+```bash
+npm run seed
+```
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+### Run
+
+```bash
+npm start        # production
+npm run dev      # development with nodemon
+```
+
+API available at `http://localhost:5000/graphql`
+
+### Run tests
+
+```bash
+npm run test:postman
+```
+
+## Example Queries
+
+**Get products with pagination:**
+```graphql
+query {
+  products(page: 1, limit: 10, country: "France") {
+    total pages
+    products { id name price alcoholContent }
+  }
+}
+```
+
+**Get product groups with nested products:**
+```graphql
+query {
+  productGroups {
+    name productCount
+    products { id name price }
+  }
+}
+```
+
+**Register and login:**
+```graphql
+mutation {
+  register(username: "lukas", email: "lukas@example.com", password: "secret123") {
+    token
+    user { id email }
+  }
+}
+```
+
+**Add a product (requires Authorization header):**
+```graphql
+mutation {
+  addProduct(name: "Test Wine", price: 149.0, productGroup: "Red wine", originCountry: "Italy", alcoholContent: "13.5%", volumeMl: 750) {
+    id name price
+  }
+}
+```
+
+## Reflection
+
+The trickiest part was the `.lean()` issue — Mongoose's `.lean()` strips the virtual `id` getter and returns raw `_id` instead, which GraphQL can't map automatically. The fix was removing `.lean()` from resolvers returning `Product` documents and adding a `Product.id` resolver as a safety net.
+
+Setting up the text index for search required the index to exist in MongoDB before queries run, which the seed script handles automatically via Mongoose schema index definitions.
+
+If I were to do this again I would add cursor-based pagination instead of offset/limit, which scales better for large datasets.
+
+## Acknowledgements
+
+- Dataset: [Systembolaget open data](https://www.systembolaget.se/om-systembolaget/press/oppna-data-och-api/)
+- [Apollo Server docs](https://www.apollographql.com/docs/apollo-server/)
+- [Mongoose docs](https://mongoosejs.com/docs/)
