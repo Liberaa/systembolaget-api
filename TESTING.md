@@ -1,6 +1,6 @@
 # Testing
 
-Automated tests are written as a Postman collection and run via Newman, both locally and in the GitLab CI/CD pipeline.
+Automated tests are written as a Postman collection and executed via Newman, both locally and in the GitLab CI/CD pipeline.
 
 ## Running Tests
 
@@ -22,20 +22,11 @@ Tests run automatically on every commit and merge request via `.gitlab-ci.yml`. 
 
 ## Environment Setup
 
-Copy `production.postman_environment.json` and fill in your deployed URL:
-
-```json
-{
-  "key": " ",
-  "value": " ",
-}
-```
-
-All other variables (`token`, `newProductId`, etc.) are set automatically by pre-request scripts during the test run. Do not hardcode them.
+The `production.postman_environment.json` file is included in the repo with the production URL pre-filled. All other variables (`token`, `newProductId`, etc.) are populated automatically by pre-request scripts during the test run — no manual setup needed.
 
 ## Test Cases
 
-26 test cases across 4 folders.
+26 test cases across 5 folders.
 
 ### Authentication (6 tests)
 
@@ -90,9 +81,9 @@ All other variables (`token`, `newProductId`, etc.) are set automatically by pre
 
 ## Design Decisions
 
-**Random data generation:** Pre-request scripts generate a unique username, email, and product name on every run using `Math.random()`. This ensures tests never conflict with existing database state and can run repeatedly in CI without cleanup.
+**Random data generation:** Pre-request scripts generate a unique username, email, and product name on every run using `Math.random()`. Tests never conflict with existing database state and can run repeatedly in CI without cleanup.
 
-**Sequence dependency:** The write tests intentionally depend on each other in sequence — register creates a user, login stores the token, addProduct stores the ID, then update/delete use that ID. This mirrors real usage and tests the full workflow end to end.
+**Sequence dependency:** The write tests depend on each other in sequence — register creates a user, login stores the token, addProduct stores the ID, then update/delete use that ID. This mirrors real usage and tests the full workflow end to end.
 
 **Environment variables used:**
 
