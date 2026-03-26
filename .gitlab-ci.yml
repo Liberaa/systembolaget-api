@@ -14,7 +14,7 @@ newman_tests:
   stage: test
   script:
     - npm install -g newman
-    - newman run BookVault-GraphQL.postman_collection.json -e production.postman_environment.json
+    - newman run SystembolagetAPI.postman_collection.json -e production.postman_environment.json
   only:
     - branches
     - merge_requests
