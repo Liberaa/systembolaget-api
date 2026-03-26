@@ -1,6 +1,7 @@
 > **Note:** The full commit history for this project is in the original development repository:
 > https://gitlab.lnu.se/1dv027/student/ls224ec/exercises/graphql
-> This repository was migrated to the correct location for submission. All code is identical.
+> This repository was migrated to the correct location for submission. Beacuse I wrote it in wrong location. Pipelines works here
+>https://gitlab.lnu.se/1dv027/student/ls224ec/exercises/graphql
 
 
 # Systembolaget GraphQL API
