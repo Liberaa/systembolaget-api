@@ -19,7 +19,7 @@ const resolvers = {
 
       const skip = (page - 1) * limit
       const [products, total] = await Promise.all([
-        Product.find(filter).skip(skip).limit(limit).lean(),
+        Product.find(filter).skip(skip).limit(limit),
         Product.countDocuments(filter)
       ])
 
@@ -27,7 +27,7 @@ const resolvers = {
     },
 
     product: async (_, { id }) => {
-      return Product.findById(id).lean().catch(() => null)
+      return Product.findById(id).catch(() => null)
     },
 
     countries: async () => {
@@ -51,7 +51,7 @@ const resolvers = {
     me: async (_, __, { token }) => {
       const decoded = verifyToken(token)
       if (!decoded) return null
-      return User.findById(decoded.id).lean()
+      return User.findById(decoded.id)
     }
   },
 
@@ -93,7 +93,7 @@ const resolvers = {
         id,
         updates,
         { new: true, runValidators: true }
-      ).lean()
+      )
       if (!product) throw new UserInputError('Product not found')
       return product
     },
@@ -112,6 +112,10 @@ const resolvers = {
 
   ProductGroup: {
     products: ({ name }) => Product.find({ productGroup: name }).limit(10).lean()
+  },
+
+  Product: {
+    id: (parent) => parent._id?.toString() || parent.id
   }
 }
 
