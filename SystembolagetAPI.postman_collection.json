@@ -1,0 +1,1450 @@
+{
+  "info": {
+    "name": "SystembolagetAPI",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"regUsername\", \"user_\" + Math.random().toString(36).slice(2, 8))",
+                  "pm.environment.set(\"regEmail\", \"test_\" + Math.random().toString(36).slice(2, 10) + \"@example.com\")",
+                  "pm.environment.set(\"regPassword\", \"password123\")"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"No errors\", () => pm.expect(json.errors).to.be.undefined)",
+                  "pm.test(\"Token returned\", () => pm.expect(json.data.register.token).to.be.a(\"string\"))",
+                  "pm.test(\"User has email\", () => pm.expect(json.data.register.user.email).to.include(\"@\"))",
+                  "pm.environment.set(\"token\", json.data.register.token)",
+                  "pm.environment.set(\"userId\", json.data.register.user.id)"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"mutation Register($username: String!, $email: String!, $password: String!) {\\n  register(username: $username, email: $email, password: $password) {\\n    token\\n    user { id username email }\\n  }\\n}\",\"variables\":{\"username\":\"{{regUsername}}\",\"email\":\"{{regEmail}}\",\"password\":\"{{regPassword}}\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Register - Duplicate Email (Failure)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"Has error\", () => pm.expect(json.errors).to.be.an(\"array\").that.is.not.empty)",
+                  "pm.test(\"Error mentions taken\", () => pm.expect(json.errors[0].message).to.include(\"taken\"))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"mutation Register($username: String!, $email: String!, $password: String!) {\\n  register(username: $username, email: $email, password: $password) {\\n    token\\n    user { id }\\n  }\\n}\",\"variables\":{\"username\":\"{{regUsername}}_2\",\"email\":\"{{regEmail}}\",\"password\":\"{{regPassword}}\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Register - Missing Password (Failure)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"Has error\", () => pm.expect(json.errors).to.be.an(\"array\").that.is.not.empty)"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"mutation {\\n  register(username: \\\"testuser\\\", email: \\\"missing@example.com\\\", password: \\\"\\\") {\\n    token\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"No errors\", () => pm.expect(json.errors).to.be.undefined)",
+                  "pm.test(\"Token returned\", () => pm.expect(json.data.login.token).to.be.a(\"string\"))",
+                  "pm.environment.set(\"token\", json.data.login.token)"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"mutation Login($email: String!, $password: String!) {\\n  login(email: $email, password: $password) {\\n    token\\n    user { id username email }\\n  }\\n}\",\"variables\":{\"email\":\"{{regEmail}}\",\"password\":\"{{regPassword}}\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login - Wrong Password (Failure)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"Has error\", () => pm.expect(json.errors).to.be.an(\"array\").that.is.not.empty)",
+                  "pm.test(\"Invalid credentials error\", () => pm.expect(json.errors[0].message).to.include(\"Invalid credentials\"))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"mutation {\\n  login(email: \\\"{{regEmail}}\\\", password: \\\"wrongpassword\\\") {\\n    token\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login - Non-existent User (Failure)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"Has error\", () => pm.expect(json.errors).to.be.an(\"array\").that.is.not.empty)"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"mutation {\\n  login(email: \\\"nobody_1774517246434@fake.com\\\", password: \\\"password123\\\") {\\n    token\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products - Read",
+      "item": [
+        {
+          "name": "Get Products - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"No errors\", () => pm.expect(json.errors).to.be.undefined)",
+                  "pm.test(\"Returns products array\", () => pm.expect(json.data.products.products).to.be.an(\"array\"))",
+                  "pm.test(\"Has total count\", () => pm.expect(json.data.products.total).to.be.a(\"number\").above(0))",
+                  "pm.test(\"Has pagination info\", () => pm.expect(json.data.products.pages).to.be.a(\"number\"))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"query {\\n  products(page: 1, limit: 10) {\\n    products { id name price originCountry productGroup alcoholContent }\\n    total page pages\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Products - Pagination Page 2",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"No errors\", () => pm.expect(json.errors).to.be.undefined)",
+                  "pm.test(\"Page is 2\", () => pm.expect(json.data.products.page).to.equal(2))",
+                  "pm.test(\"Limit respected\", () => pm.expect(json.data.products.products.length).to.be.at.most(5))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"query {\\n  products(page: 2, limit: 5) {\\n    products { id name }\\n    total page pages\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Products - Search Filter",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"No errors\", () => pm.expect(json.errors).to.be.undefined)",
+                  "pm.test(\"Returns results\", () => pm.expect(json.data.products.products).to.be.an(\"array\"))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"query {\\n  products(search: \\\"wine\\\", limit: 5) {\\n    products { id name productGroup }\\n    total\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Products - Country Filter",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"No errors\", () => pm.expect(json.errors).to.be.undefined)",
+                  "pm.test(\"All products from France\", () => {\n  json.data.products.products.forEach(p => pm.expect(p.originCountry).to.equal(\"France\"))\n})"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"query {\\n  products(country: \\\"France\\\", limit: 5) {\\n    products { id name originCountry }\\n    total\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product - Non-existent ID (Failure)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"Product is null\", () => pm.expect(json.data.product).to.be.null)"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"query {\\n  product(id: \\\"000000000000000000000000\\\") {\\n    id name\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products - Write (Auth Required)",
+      "item": [
+        {
+          "name": "Add Product - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"newProductName\", \"Test Wine \" + Math.random().toString(36).slice(2, 8))"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"No errors\", () => pm.expect(json.errors).to.be.undefined)",
+                  "pm.test(\"Product created with ID\", () => pm.expect(json.data.addProduct.id).to.be.a(\"string\"))",
+                  "pm.test(\"Name matches\", () => pm.expect(json.data.addProduct.name).to.equal(pm.environment.get(\"newProductName\")))",
+                  "pm.test(\"Price correct\", () => pm.expect(json.data.addProduct.price).to.equal(149))",
+                  "pm.environment.set(\"newProductId\", json.data.addProduct.id)"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"mutation AddProduct($name: String!, $price: Float, $productGroup: String, $originCountry: String, $alcoholContent: String, $volumeMl: Float) {\\n  addProduct(name: $name, price: $price, productGroup: $productGroup, originCountry: $originCountry, alcoholContent: $alcoholContent, volumeMl: $volumeMl) {\\n    id name price productGroup originCountry alcoholContent volumeMl\\n  }\\n}\",\"variables\":{\"name\":\"{{newProductName}}\",\"price\":149,\"productGroup\":\"Red wine\",\"originCountry\":\"France\",\"alcoholContent\":\"13.5%\",\"volumeMl\":750}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product - By ID (Success)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"No errors\", () => pm.expect(json.errors).to.be.undefined)",
+                  "pm.test(\"Correct product returned\", () => pm.expect(json.data.product.id).to.equal(pm.environment.get(\"newProductId\")))",
+                  "pm.test(\"Name correct\", () => pm.expect(json.data.product.name).to.equal(pm.environment.get(\"newProductName\")))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"query GetProduct($id: ID!) {\\n  product(id: $id) {\\n    id name price productGroup originCountry\\n  }\\n}\",\"variables\":{\"id\":\"{{newProductId}}\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Product - No Auth (Failure)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"Has auth error\", () => pm.expect(json.errors).to.be.an(\"array\").that.is.not.empty)",
+                  "pm.test(\"Not authenticated message\", () => pm.expect(json.errors[0].message).to.include(\"Not authenticated\"))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"mutation {\\n  addProduct(name: \\\"Unauthorized Wine\\\", price: 99.0) {\\n    id name\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Product - Missing Name (Failure)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"Has validation error\", () => pm.expect(json.errors).to.be.an(\"array\").that.is.not.empty)"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"mutation {\\n  addProduct(name: \\\"\\\", price: 99.0) {\\n    id name\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Product - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"No errors\", () => pm.expect(json.errors).to.be.undefined)",
+                  "pm.test(\"Price updated\", () => pm.expect(json.data.updateProduct.price).to.equal(199))",
+                  "pm.test(\"Country updated\", () => pm.expect(json.data.updateProduct.originCountry).to.equal(\"Italy\"))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"mutation UpdateProduct($id: ID!, $price: Float, $originCountry: String) {\\n  updateProduct(id: $id, price: $price, originCountry: $originCountry) {\\n    id name price originCountry\\n  }\\n}\",\"variables\":{\"id\":\"{{newProductId}}\",\"price\":199,\"originCountry\":\"Italy\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Product - No Auth (Failure)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"Has auth error\", () => pm.expect(json.errors).to.be.an(\"array\").that.is.not.empty)"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"mutation {\\n  updateProduct(id: \\\"{{newProductId}}\\\", price: 999.0) {\\n    id price\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Product - Non-existent ID (Failure)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"Has error\", () => pm.expect(json.errors).to.be.an(\"array\").that.is.not.empty)",
+                  "pm.test(\"Not found message\", () => pm.expect(json.errors[0].message).to.include(\"not found\"))"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"mutation {\\n  updateProduct(id: \\\"000000000000000000000000\\\", price: 1.0) {\\n    id\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Secondary Resources",
+      "item": [
+        {
+          "name": "Get Countries - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"No errors\", () => pm.expect(json.errors).to.be.undefined)",
+                  "pm.test(\"Returns array of countries\", () => pm.expect(json.data.countries).to.be.an(\"array\").that.is.not.empty)",
+                  "pm.test(\"Each country has name and count\", () => {\n  json.data.countries.forEach(c => {\n    pm.expect(c.name).to.be.a(\"string\")\n    pm.expect(c.productCount).to.be.a(\"number\").above(0)\n  })\n})"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"query {\\n  countries {\\n    name productCount\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product Groups - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"No errors\", () => pm.expect(json.errors).to.be.undefined)",
+                  "pm.test(\"Returns product groups\", () => pm.expect(json.data.productGroups).to.be.an(\"array\").that.is.not.empty)",
+                  "pm.environment.set(\"firstGroup\", json.data.productGroups[0].name)"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"query {\\n  productGroups {\\n    name productCount\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product Groups - Nested Products",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"No errors\", () => pm.expect(json.errors).to.be.undefined)",
+                  "pm.test(\"Nested products returned\", () => {\n  const first = json.data.productGroups[0]\n  pm.expect(first.products).to.be.an(\"array\")\n})"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"query {\\n  productGroups {\\n    name productCount\\n    products { id name price }\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Countries - With Nested Products",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"No errors\", () => pm.expect(json.errors).to.be.undefined)",
+                  "pm.test(\"Countries have nested products\", () => {\n  json.data.countries.slice(0, 3).forEach(c => {\n    pm.expect(c.products).to.be.an(\"array\")\n  })\n})"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"query {\\n  countries {\\n    name productCount\\n    products { id name alcoholContent }\\n  }\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Product",
+      "item": [
+        {
+          "name": "Delete Product - No Auth (Failure)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"Has auth error\", () => pm.expect(json.errors).to.be.an(\"array\").that.is.not.empty)"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"mutation {\\n  deleteProduct(id: \\\"{{newProductId}}\\\")\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Product - Non-existent ID (Failure)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"Has error\", () => pm.expect(json.errors).to.be.an(\"array\").that.is.not.empty)"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"mutation {\\n  deleteProduct(id: \\\"000000000000000000000000\\\")\\n}\",\"variables\":{}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Product - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"No errors\", () => pm.expect(json.errors).to.be.undefined)",
+                  "pm.test(\"Returns true\", () => pm.expect(json.data.deleteProduct).to.be.true)"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"mutation DeleteProduct($id: ID!) {\\n  deleteProduct(id: $id)\\n}\",\"variables\":{\"id\":\"{{newProductId}}\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Deleted Product - Null (Success)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200))",
+                  "const json = pm.response.json()",
+                  "pm.test(\"Product no longer exists\", () => pm.expect(json.data.product).to.be.null)"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"query\":\"query GetProduct($id: ID!) {\\n  product(id: $id) { id name }\\n}\",\"variables\":{\"id\":\"{{newProductId}}\"}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
