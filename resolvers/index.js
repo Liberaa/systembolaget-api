@@ -107,11 +107,17 @@ const resolvers = {
   },
 
   Country: {
-    products: ({ name }) => Product.find({ originCountry: name }).limit(10).lean()
+    products: async ({ name }) => {
+      const docs = await Product.find({ originCountry: name }).limit(10).lean()
+      return docs.map(p => ({ ...p, id: p._id.toString() }))
+    }
   },
 
   ProductGroup: {
-    products: ({ name }) => Product.find({ productGroup: name }).limit(10).lean()
+    products: async ({ name }) => {
+      const docs = await Product.find({ productGroup: name }).limit(10).lean()
+      return docs.map(p => ({ ...p, id: p._id.toString() }))
+    }
   },
 
   Product: {
