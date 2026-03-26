@@ -1,5 +1,5 @@
 require('dotenv').config()
-
+// GitLab and github, render for deployment
 const express = require('express')
 const mongoose = require('mongoose')
 const { ApolloServer } = require('apollo-server-express')
