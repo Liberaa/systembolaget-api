@@ -107,11 +107,11 @@ const resolvers = {
   },
 
   Country: {
-    products: ({ name }) => Product.find({ originCountry: name }).limit(10).lean()
+    products: ({ name }) => Product.find({ originCountry: name }).limit(10)
   },
 
   ProductGroup: {
-    products: ({ name }) => Product.find({ productGroup: name }).limit(10).lean()
+    products: ({ name }) => Product.find({ productGroup: name }).limit(10)
   },
 
   Product: {
